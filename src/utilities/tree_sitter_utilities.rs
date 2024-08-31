@@ -204,16 +204,9 @@ fn find_trailing_indentation(code: &str, start_byte: usize) -> &str {
     let prev_char = code_bytes[indentation_start - 1] as char;
     if prev_char == ' ' || prev_char == '\t' {
       indentation_start -= 1;
-    } else if prev_char == '\n' {
-      indentation_start += 1; // Move to the position right after the newline
-      break;
     } else {
       break;
     }
-  }
-
-  if indentation_start > start_byte {
-    indentation_start = start_byte;
   }
 
   &code[indentation_start..start_byte]
