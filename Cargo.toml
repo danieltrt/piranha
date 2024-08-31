@@ -54,7 +54,7 @@ tree-sitter-python = "0.20.2"
 tree-sitter-ruby = "0.20.1"
 tree-sitter-typescript = "0.20.1"
 # TODO: Update after https://github.com/tree-sitter/tree-sitter-go/pull/103 lands
-tree-sitter-go = { git = "https://github.com/uber/tree-sitter-go.git", rev = "f8cffd0af7baaf7bf6062e403efe7c0d06319c41" }
+tree-sitter-go = { git = "https://github.com/danieltrt/tree-sitter-go.git", rev = "537b6ebfea1b974ea56c217d44bba8d680544824" }
 tree-sitter-thrift = "0.5.0"
 tree-sitter-strings = { git = "https://github.com/uber/tree-sitter-strings.git" }
 tree-sitter-query = "0.1.0"
