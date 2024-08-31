@@ -195,6 +195,57 @@ fn get_range_for_replace_node(
   );
 }
 
+/// Finds the exact trailing characters (could be spaces, tabs, etc.) before the replace range start
+fn find_trailing_indentation(code: &str, start_byte: usize) -> &str {
+  let code_bytes = code.as_bytes();
+  let mut indentation_start = start_byte;
+
+  while indentation_start > 0 {
+    let prev_char = code_bytes[indentation_start - 1] as char;
+    if prev_char == ' ' || prev_char == '\t' {
+      indentation_start -= 1;
+    } else if prev_char == '\n' {
+      indentation_start += 1; // Move to the position right after the newline
+      break;
+    } else {
+      break;
+    }
+  }
+
+  if indentation_start > start_byte {
+    indentation_start = start_byte;
+  }
+
+  &code[indentation_start..start_byte]
+}
+
+/// Preprocesses the replacement string by adding the detected trailing characters before each line
+/// in the replacement string.
+fn preprocess_replacement(code: &str, replace_range: Range, replacement: &str) -> String {
+  let start_byte = *replace_range.start_byte();
+
+  // Find the exact trailing characters (could be spaces, tabs, etc.) before the replace range start
+  let trailing_indentation = find_trailing_indentation(code, start_byte);
+
+  // Split the replacement string into lines
+  let mut lines = replacement.lines();
+
+  // The first line remains as is, since it should already have the correct indentation
+  let mut processed_replacement = String::new();
+  if let Some(first_line) = lines.next() {
+    processed_replacement.push_str(first_line);
+  }
+
+  // For all subsequent lines, add the detected trailing characters before each line
+  for line in lines {
+    processed_replacement.push('\n');
+    processed_replacement.push_str(trailing_indentation);
+    processed_replacement.push_str(line);
+  }
+
+  processed_replacement
+}
+
 /// Replaces the given byte range (`replace_range`) with the `replacement`.
 /// Returns tree-sitter's edit representation along with updated source code.
 /// Note: This method does not update `self`.
@@ -203,16 +254,19 @@ pub(crate) fn get_tree_sitter_edit(code: String, edit: &Edit) -> (String, InputE
   let replace_range: Range = *edit.p_match().range();
   let replacement = edit.replacement_string();
   debug!("{}", edit);
+
+  // Preprocess the replacement string by adding the detected trailing characters before each line
+  let preprocessed_repl = preprocess_replacement(&code, replace_range, replacement);
   // Create the new source code content by appropriately
   // replacing the range with the replacement string.
   let new_source_code = [
     &code[..*replace_range.start_byte()],
-    replacement,
+    &preprocessed_repl,
     &code[*replace_range.end_byte()..],
   ]
   .concat();
 
-  let len_of_replacement = replacement.as_bytes().len();
+  let len_of_replacement = preprocessed_repl.as_bytes().len();
   let old_source_code_bytes = code.as_bytes();
   let new_source_code_bytes = new_source_code.as_bytes();
   let start_byte = *replace_range.start_byte();

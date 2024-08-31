@@ -71,6 +71,11 @@ pub(crate) struct SourceCodeUnit {
   piranha_arguments: PiranhaArguments,
 }
 
+struct RuleApplication {
+  success: bool,
+  start_byte: Option<usize>,
+}
+
 impl SourceCodeUnit {
   pub(crate) fn new(
     parser: &mut Parser, code: String, substitutions: &HashMap<String, String>, path: &Path,
@@ -105,10 +110,16 @@ impl SourceCodeUnit {
     &mut self, rule: InstantiatedRule, rules_store: &mut RuleStore, parser: &mut Parser,
     scope_query: &Option<CGPattern>,
   ) {
-    loop {
-      if !self._apply_rule(rule.clone(), rules_store, parser, scope_query) {
-        break;
-      }
+    let start_byte = Some(1000000000);
+    let mut result = self._apply_rule(rule.clone(), rules_store, parser, scope_query, start_byte);
+    while result.success {
+      result = self._apply_rule(
+        rule.clone(),
+        rules_store,
+        parser,
+        scope_query,
+        result.start_byte,
+      );
     }
   }
 
@@ -133,8 +144,8 @@ impl SourceCodeUnit {
   /// *** Propagate the change
   fn _apply_rule(
     &mut self, rule: InstantiatedRule, rule_store: &mut RuleStore, parser: &mut Parser,
-    scope_query: &Option<CGPattern>,
-  ) -> bool {
+    scope_query: &Option<CGPattern>, start_byte: Option<usize>,
+  ) -> RuleApplication {
     let scope_node = self.get_scope_node(scope_query, rule_store);
 
     let mut query_again = false;
@@ -143,8 +154,9 @@ impl SourceCodeUnit {
     // Update the first match of the rewrite rule
     // Add mappings to the substitution
     // Propagate each applied edit. The next rule will be applied relative to the application of this edit.
+    let mut next_start_byte = None;
     if !rule.rule().is_match_only_rule() {
-      if let Some(edit) = self.get_edit(&rule, rule_store, scope_node, true) {
+      if let Some(edit) = self.get_edit(&rule, rule_store, scope_node, true, start_byte) {
         self.rewrites_mut().push(edit.clone());
         query_again = true;
 
@@ -154,6 +166,7 @@ impl SourceCodeUnit {
         // Apply edit_1
         let applied_ts_edit = self.apply_edit(&edit, parser);
 
+        next_start_byte = Some(edit.p_match().range().start_byte);
         self.propagate(get_replace_range(applied_ts_edit), rule, rule_store, parser);
       }
     }
@@ -177,7 +190,10 @@ impl SourceCodeUnit {
         self.propagate(*m.range(), rule.clone(), rule_store, parser);
       }
     }
-    query_again
+    RuleApplication {
+      success: query_again,
+      start_byte: next_start_byte,
+    }
   }
 
   /// This is the propagation logic of the Piranha's main algorithm.
