@@ -36,6 +36,29 @@ use super::{
   rule::InstantiatedRule,
   rule_store::RuleStore,
 };
+
+use once_cell::sync::Lazy;
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
+use std::env;
+use std::sync::Mutex;
+
+// Define a static, lazily initialized RNG
+static RNG: Lazy<Mutex<StdRng>> = Lazy::new(|| {
+  let seed: u64 = env::var("SEED")
+    .ok()
+    .and_then(|val| val.parse().ok())
+    .unwrap_or(42); // Default seed
+  Mutex::new(StdRng::seed_from_u64(seed))
+});
+
+static PROBABILITY: Lazy<f64> = Lazy::new(|| {
+  env::var("PROBABILITY")
+    .ok()
+    .and_then(|val| val.parse().ok())
+    .unwrap_or(1.0) // Default probability
+});
+
 use getset::{CopyGetters, Getters, MutGetters, Setters};
 // Maintains the updated source code content and AST of the file
 #[derive(Clone, Getters, CopyGetters, MutGetters, Setters)]
@@ -163,11 +186,17 @@ impl SourceCodeUnit {
         // Add all the (code_snippet, tag) mapping to the substitution table.
         self.substitutions.extend(edit.p_match().matches().clone());
 
-        // Apply edit_1
-        let applied_ts_edit = self.apply_edit(&edit, parser);
+        let random_value: f64 = {
+          let mut rng = RNG.lock().unwrap();
+          rng.gen_range(0.0..1.0)
+        };
+
+        if random_value < *PROBABILITY {
+          let applied_ts_edit = self.apply_edit(&edit, parser);
+          self.propagate(get_replace_range(applied_ts_edit), rule, rule_store, parser);
+        }
 
         next_start_byte = Some(edit.p_match().range().start_byte);
-        self.propagate(get_replace_range(applied_ts_edit), rule, rule_store, parser);
       }
     }
     // When rule is a "match-only" rule :
