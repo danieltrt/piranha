@@ -180,11 +180,7 @@ impl SourceCodeUnit {
     let mut next_start_byte = None;
     if !rule.rule().is_match_only_rule() {
       if let Some(edit) = self.get_edit(&rule, rule_store, scope_node, true, start_byte) {
-        self.rewrites_mut().push(edit.clone());
         query_again = true;
-
-        // Add all the (code_snippet, tag) mapping to the substitution table.
-        self.substitutions.extend(edit.p_match().matches().clone());
 
         let random_value: f64 = {
           let mut rng = RNG.lock().unwrap();
@@ -192,6 +188,8 @@ impl SourceCodeUnit {
         };
 
         if random_value < *PROBABILITY {
+          self.rewrites_mut().push(edit.clone());
+          self.substitutions.extend(edit.p_match().matches().clone());
           let applied_ts_edit = self.apply_edit(&edit, parser);
           self.propagate(get_replace_range(applied_ts_edit), rule, rule_store, parser);
         }
