@@ -225,8 +225,11 @@ class Rule:
     "Filters to test before applying a rule"
     is_seed_rule: bool
     "Marks a rule as a seed rule"
+    probability: float
+    "Probability of rewriting code for each snippet matched with this rule"
 
-    def __init__(
+
+def __init__(
         self,
         name: str,
         query: Optional[str] = None,
@@ -236,6 +239,7 @@ class Rule:
         holes: set[str] = set(),
         filters: set[Filter] = set(),
         is_seed_rule: bool = True,
+        probability: float = 1.0,
     ):
         """
         Constructs `Rule`

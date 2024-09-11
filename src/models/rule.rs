@@ -100,7 +100,7 @@ pub struct Rule {
   #[serde(default = "default_probability")]
   #[get = "pub"]
   #[pyo3(get)]
-  probability: f32,
+  probability: f64,
 }
 
 // Implement PartialEq manually to account for floating-point comparison
@@ -191,7 +191,7 @@ impl Rule {
   fn py_new(
     name: String, query: Option<String>, replace: Option<String>, replace_idx: Option<u8>,
     replace_node: Option<String>, holes: Option<HashSet<String>>, groups: Option<HashSet<String>>,
-    filters: Option<HashSet<Filter>>, is_seed_rule: Option<bool>,
+    filters: Option<HashSet<Filter>>, is_seed_rule: Option<bool>, probability: Option<f64>,
   ) -> Self {
     let mut rule_builder = RuleBuilder::default();
 
@@ -226,6 +226,10 @@ impl Rule {
 
     if let Some(is_seed_rule) = is_seed_rule {
       rule_builder.is_seed_rule(is_seed_rule);
+    }
+
+    if let Some(probability) = probability {
+      rule_builder.probability(probability);
     }
 
     rule_builder.build().unwrap()

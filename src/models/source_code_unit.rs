@@ -52,13 +52,6 @@ static RNG: Lazy<Mutex<StdRng>> = Lazy::new(|| {
   Mutex::new(StdRng::seed_from_u64(seed))
 });
 
-static PROBABILITY: Lazy<f64> = Lazy::new(|| {
-  env::var("PROBABILITY")
-    .ok()
-    .and_then(|val| val.parse().ok())
-    .unwrap_or(1.0) // Default probability
-});
-
 use getset::{CopyGetters, Getters, MutGetters, Setters};
 // Maintains the updated source code content and AST of the file
 #[derive(Clone, Getters, CopyGetters, MutGetters, Setters)]
@@ -187,7 +180,7 @@ impl SourceCodeUnit {
           rng.gen_range(0.0..1.0)
         };
 
-        if random_value < *PROBABILITY {
+        if random_value < *rule.rule().probability() {
           self.rewrites_mut().push(edit.clone());
           self.substitutions.extend(edit.p_match().matches().clone());
           let applied_ts_edit = self.apply_edit(&edit, parser);

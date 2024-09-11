@@ -114,7 +114,7 @@ pub(crate) fn default_query() -> CGPattern {
   CGPattern::new(String::new())
 }
 
-pub(crate) fn default_probability() -> f32 {
+pub(crate) fn default_probability() -> f64 {
   1.0
 }
 
