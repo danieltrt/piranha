@@ -25,8 +25,8 @@ use crate::utilities::Instantiate;
 use super::{
   capture_group_patterns::CGPattern,
   default_configs::{
-    default_filters, default_groups, default_holes, default_is_seed_rule, default_query,
-    default_replace, default_replace_idx, default_replace_node, default_rule_name,
+    default_filters, default_groups, default_holes, default_is_seed_rule, default_probability,
+    default_query, default_replace, default_replace_idx, default_replace_node, default_rule_name,
   },
   filter::Filter,
   Validator,
@@ -38,7 +38,7 @@ pub(crate) struct Rules {
   pub(crate) rules: Vec<Rule>,
 }
 
-#[derive(Deserialize, Debug, Clone, Default, PartialEq, Getters, Builder, Eq)]
+#[derive(Deserialize, Debug, Clone, Default, Getters, Builder)]
 #[pyclass]
 pub struct Rule {
   /// Name of the rule. (It is unique)
@@ -95,7 +95,36 @@ pub struct Rule {
   #[get = "pub"]
   #[pyo3(get)]
   is_seed_rule: bool,
+
+  #[builder(default = "default_probability()")]
+  #[serde(default = "default_probability")]
+  #[get = "pub"]
+  #[pyo3(get)]
+  probability: f32,
 }
+
+// Implement PartialEq manually to account for floating-point comparison
+impl PartialEq for Rule {
+  fn eq(&self, other: &Self) -> bool {
+    // Handle floating-point comparison manually
+    let probability_eq = self.probability == other.probability
+      || (self.probability.is_nan() && other.probability.is_nan());
+
+    self.name == other.name
+      && self.query == other.query
+      && self.replace_node == other.replace_node
+      && self.replace_idx == other.replace_idx
+      && self.replace == other.replace
+      && self.groups == other.groups
+      && self.holes == other.holes
+      && self.filters == other.filters
+      && self.is_seed_rule == other.is_seed_rule
+      && probability_eq // Special comparison for `f32`
+  }
+}
+
+// Implement Eq for Rule because we now properly handle floating-point equality
+impl Eq for Rule {}
 
 impl Rule {
   /// Dummy rules are helper rules that make it easier to define the rule graph

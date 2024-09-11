@@ -20,6 +20,8 @@ use super::{
   outgoing_edges::OutgoingEdges, rule::Rule, rule_graph::RuleGraph,
 };
 
+pub const C: &str = "c";
+pub const CPP: &str = "cpp";
 pub const JAVA: &str = "java";
 pub const JAVA_CS: &str = "java_cs";
 pub const KOTLIN: &str = "kt";
@@ -110,6 +112,10 @@ pub fn default_delete_consecutive_new_lines() -> bool {
 
 pub(crate) fn default_query() -> CGPattern {
   CGPattern::new(String::new())
+}
+
+pub(crate) fn default_probability() -> f32 {
+  1.0
 }
 
 pub fn default_replace_node() -> String {
