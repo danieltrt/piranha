@@ -229,7 +229,7 @@ class Rule:
     "Probability of rewriting code for each snippet matched with this rule"
 
 
-def __init__(
+    def __init__(
         self,
         name: str,
         query: Optional[str] = None,
