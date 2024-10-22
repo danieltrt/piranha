@@ -217,16 +217,13 @@ The output JSON is the serialization of- [`PiranhaOutputSummary`](/src/models/pi
 | ---------------- | --------------------------- | ---------------------------------------- | ------------------------------------ |
 | Java             | :heavy_check_mark:          | :heavy_check_mark:                       | :heavy_check_mark:                   |
 | Kotlin           | :heavy_check_mark:          | :heavy_check_mark:                       | :heavy_check_mark:                   |
-| Java + Kotlin    | :x:                         | :calendar:                               | :calendar:                           |
+| Java + Kotlin    | :x:                         | :x:                                      | :x:                                  |
 | Swift            | :heavy_check_mark:          | :construction:                           | :construction:                       |
 | Go               | :heavy_check_mark:          | :heavy_check_mark:                       | :heavy_check_mark:                   |
-| Python           | :heavy_check_mark:          | :calendar:                               | :calendar:                           |
-| TypeScript       | :heavy_check_mark:          | :calendar:                               | :calendar:                           |
-| TypeScript+React | :heavy_check_mark:          | :calendar:                               | :calendar:                           |
-| C#               | :calendar:                  | :calendar:                               | :calendar:                           |
-| JavaScript       | :calendar:                  | :calendar:                               | :calendar:                           |
+| Python           | :heavy_check_mark:          | :x:                                      | :x:                                  |
+| TypeScript       | :heavy_check_mark:          | :x:                                      | :x:                                  |
+| TypeScript+React | :heavy_check_mark:          | :x:                                      | :x:                                  |
 
-Contributions for the :calendar: (`planned`) languages or any other languages are welcome :)
 
 
 ## Piranha DSL
