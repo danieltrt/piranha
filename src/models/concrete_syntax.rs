@@ -14,13 +14,14 @@
 use crate::models::matches::Range;
 
 use regex::Regex;
-
 use std::collections::HashMap;
+use std::str;
 use tree_sitter::{Node, TreeCursor};
 use tree_sitter_traversal::Cursor;
 
 use crate::models::capture_group_patterns::ConcreteSyntax;
 use crate::models::matches::Match;
+use crate::utilities::tree_sitter_utilities::find_trailing_indentation_from_str;
 
 // Precompile the regex outside the function
 lazy_static! {
@@ -31,6 +32,7 @@ lazy_static! {
 // Struct to avoid dealing with lifetimes
 #[derive(Clone, PartialEq, Eq)]
 pub struct CapturedNode {
+  trailing_indent: String,
   range: Range,
   text: String,
 }
@@ -39,6 +41,27 @@ pub struct CapturedNode {
 struct MatchResult {
   mapping: HashMap<String, CapturedNode>,
   range: Range,
+}
+
+fn get_trailing_indentation(node: Node, code_bytes: &[u8]) -> String {
+  // Get the row and column where the node starts
+  let start_position = node.start_position();
+
+  // Get the line of code where the node starts as a string slice
+  let line_start_byte = node.start_byte() - start_position.column;
+  let line_end_byte = code_bytes[line_start_byte..]
+    .iter()
+    .position(|&b| b == b'\n')
+    .map(|pos| line_start_byte + pos)
+    .unwrap_or(code_bytes.len());
+  let line_text = &code_bytes[line_start_byte..line_end_byte];
+
+  // Collect leading whitespace as the indentation for this line
+  line_text
+    .iter()
+    .take_while(|&&c| c == b' ' || c == b'\t')
+    .map(|&c| c as char)
+    .collect()
 }
 
 pub(crate) fn get_all_matches_for_concrete_syntax(
@@ -58,7 +81,9 @@ pub(crate) fn get_all_matches_for_concrete_syntax(
           panic!("The tag {replace_node_key} provided in the replace node is not present")
         })
     } else {
+      let str_code = str::from_utf8(code_str).unwrap();
       CapturedNode {
+        trailing_indent: find_trailing_indentation_from_str(str_code, range.start_byte).to_string(),
         range,
         text: get_code_from_range(range.start_byte, range.end_byte, code_str),
       }
@@ -69,7 +94,15 @@ pub(crate) fn get_all_matches_for_concrete_syntax(
     matches.push(Match {
       matched_string: replace_node_match.text,
       range: replace_node_match.range,
-      matches: match_map.into_iter().map(|(k, v)| (k, v.text)).collect(),
+      matches: match_map
+        .clone()
+        .into_iter()
+        .map(|(k, v)| (k, v.text))
+        .collect(),
+      indentations: match_map
+        .into_iter()
+        .map(|(k, v)| (k, v.trailing_indent))
+        .collect(),
       associated_comma: None,
       associated_comments: Vec::new(),
     });
@@ -279,6 +312,7 @@ fn handle_template_variable_matching(
         recursive_matches.insert(
           var_name.to_string(),
           CapturedNode {
+            trailing_indent: get_trailing_indentation(first_node, source_code),
             range: Range::span_ranges(first_node.range(), last_node.range()),
             text: matched_code,
           },

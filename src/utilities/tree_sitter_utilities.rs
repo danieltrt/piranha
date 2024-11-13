@@ -196,7 +196,7 @@ fn get_range_for_replace_node(
 }
 
 /// Finds the exact trailing characters (could be spaces, tabs, etc.) before the replace range start
-fn find_trailing_indentation(code: &str, start_byte: usize) -> &str {
+pub(crate) fn find_trailing_indentation_from_str(code: &str, start_byte: usize) -> &str {
   let code_bytes = code.as_bytes();
   let mut indentation_start = start_byte;
 
@@ -218,7 +218,7 @@ fn preprocess_replacement(code: &str, replace_range: Range, replacement: &str) -
   let start_byte = *replace_range.start_byte();
 
   // Find the exact trailing characters (could be spaces, tabs, etc.) before the replace range start
-  let trailing_indentation = find_trailing_indentation(code, start_byte);
+  let trailing_indentation = find_trailing_indentation_from_str(code, start_byte);
 
   // Split the replacement string into lines
   let mut lines = replacement.lines();

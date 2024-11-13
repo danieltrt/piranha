@@ -41,6 +41,10 @@ pub struct Match {
   #[get = "pub"]
   #[pyo3(get)]
   pub(crate) matches: HashMap<String, String>,
+  // Data
+  #[get = "pub"]
+  #[pyo3(get)]
+  pub(crate) indentations: HashMap<String, String>,
   // Captures the range of the associated comma
   #[get]
   #[get_mut]
@@ -71,9 +75,10 @@ impl Match {
     Match {
       matched_string: mtch.as_str().to_string(),
       range: Range::from_regex_match(mtch, source_code),
-      matches,
+      matches: matches.clone(),
       associated_comma: None,
       associated_comments: Vec::new(),
+      indentations: matches,
     }
   }
 
@@ -439,6 +444,7 @@ impl SourceCodeUnit {
         p_match.range().start_byte,
         p_match.range().end_byte,
       );
+
       if self.is_satisfied(matched_node, rule, p_match.matches(), rule_store) {
         p_match.populate_associated_elements(&matched_node, self.code(), self.piranha_arguments());
         trace!("Found match {:#?}", p_match);
