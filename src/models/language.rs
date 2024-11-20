@@ -199,7 +199,11 @@ impl std::str::FromStr for PiranhaLanguage {
         language: tree_sitter_python::language(),
         rules: None,
         edges: None,
-        scopes: vec![],
+        scopes: parse_toml::<ScopeConfig>(include_str!(
+          "../cleanup_rules/python/scope_config.toml"
+        ))
+        .scopes()
+        .to_vec(),
         comment_nodes: vec![],
       }),
       CPP | C => Ok(PiranhaLanguage {
