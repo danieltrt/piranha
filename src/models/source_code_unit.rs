@@ -52,6 +52,22 @@ static RNG: Lazy<Mutex<StdRng>> = Lazy::new(|| {
   Mutex::new(StdRng::seed_from_u64(seed))
 });
 
+fn remove_trailing_indentation(text: &str, trailing_indent: &str) -> String {
+  println!("Text {}", text);
+  println!("Indent {}", trailing_indent);
+  text
+    .lines()
+    .map(|line| {
+      if line.starts_with(trailing_indent) {
+        line[trailing_indent.len()..].to_string()
+      } else {
+        line.to_string()
+      }
+    })
+    .collect::<Vec<String>>()
+    .join("\n")
+}
+
 use getset::{CopyGetters, Getters, MutGetters, Setters};
 // Maintains the updated source code content and AST of the file
 #[derive(Clone, Getters, CopyGetters, MutGetters, Setters)]
@@ -182,7 +198,27 @@ impl SourceCodeUnit {
 
         if random_value < *rule.rule().probability() {
           self.rewrites_mut().push(edit.clone());
-          self.substitutions.extend(edit.p_match().matches().clone());
+
+          // Normalize each match by removing trailing indentation before extending substitutions
+          let normalized_matches = edit
+            .p_match()
+            .matches()
+            .iter()
+            .map(|(key, value)| {
+              // Get the specific trailing indentation for this match from `indentations`
+              let binding = "".to_string();
+              let trailing_indent = edit.p_match().indentations.get(key).unwrap_or(&binding);
+
+              // Remove the trailing indentation from the match value
+              (
+                key.clone(),
+                remove_trailing_indentation(value, trailing_indent),
+              )
+            })
+            .collect::<HashMap<_, _>>();
+
+          self.substitutions.extend(normalized_matches);
+
           let applied_ts_edit = self.apply_edit(&edit, parser);
           self.propagate(get_replace_range(applied_ts_edit), rule, rule_store, parser);
         }
@@ -205,8 +241,23 @@ impl SourceCodeUnit {
         // Note that, here we DO NOT invoke the `_apply_edit` method and only update the `substitutions`
         // By NOT invoking this we simulate the application of an identity rule
         //
-        self.substitutions.extend(m.matches().clone());
+        let normalized_matches = m
+          .matches()
+          .iter()
+          .map(|(key, value)| {
+            // Get the specific trailing indentation for this match from `indentations`
+            let binding = "".to_string();
+            let trailing_indent = m.indentations.get(key).unwrap_or(&binding);
 
+            // Remove the trailing indentation from the match value
+            (
+              key.clone(),
+              remove_trailing_indentation(value, trailing_indent),
+            )
+          })
+          .collect::<HashMap<_, _>>();
+
+        self.substitutions.extend(normalized_matches);
         self.propagate(*m.range(), rule.clone(), rule_store, parser);
       }
     }
@@ -245,6 +296,7 @@ impl SourceCodeUnit {
     loop {
       debug!("Current Rule: {current_rule}");
       // Get all the (next) rules that could be after applying the current rule (`rule`).
+      debug!("Substitutions: {:?}", self.substitutions);
       let next_rules_by_scope = self
         .piranha_arguments
         .rule_graph()

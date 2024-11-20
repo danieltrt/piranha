@@ -1,3 +1,4 @@
+scripts/
 java/.gradle
 java/build/
 java/*/build/
