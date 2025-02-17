@@ -159,6 +159,8 @@ impl SourceCodeUnit {
   ) -> String {
     let mut output = string;
 
+    // println!("{:?}", indentations);
+
     // Helper function to remove leading indentation from `text`
     let normalize_indentation = |text: &str, remove_indent: &str| -> String {
       text
@@ -197,7 +199,7 @@ impl SourceCodeUnit {
 
         // Find the indentation level of the tag within `output`
         for key in &[key_at_tag, key_colon_tag] {
-          if let Some(pos) = output.find(key) {
+          while let Some(pos) = output.find(key) {
             // Calculate the indentation of the tag in the `output`
             let line_start = output[..pos].rfind('\n').map_or(0, |p| p + 1);
             let tag_indent = &output[line_start..pos]
@@ -211,6 +213,10 @@ impl SourceCodeUnit {
             // Replace the tag with the indented substitute in `output`
             output.replace_range(pos..pos + key.len(), &indented_substitute);
           }
+        }
+      } else {
+        for key in &[key_at_tag, key_colon_tag] {
+          output = output.replace(key, substitute);
         }
       }
     }

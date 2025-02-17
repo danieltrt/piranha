@@ -58,8 +58,9 @@ impl CGPattern {
   }
 
   pub(crate) fn extract_concrete_syntax(&self) -> ConcreteSyntax {
-    let mut _val = &self.pattern()[CONCRETE_SYNTAX_QUERY_PREFIX.len()..];
-    ConcreteSyntax(_val.to_string())
+    let after_prefix = &self.pattern()[CONCRETE_SYNTAX_QUERY_PREFIX.len()..];
+    let cs_final = after_prefix.trim_start().to_string();
+    ConcreteSyntax(cs_final)
   }
 
   pub(crate) fn pattern_type(&self) -> PatternType {

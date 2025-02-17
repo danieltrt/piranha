@@ -14,7 +14,7 @@
 use crate::models::capture_group_patterns::ConcreteSyntax;
 use crate::models::concrete_syntax::get_all_matches_for_concrete_syntax;
 use crate::models::default_configs::GO;
-use crate::models::{default_configs::JAVA, language::PiranhaLanguage};
+use crate::models::{default_configs::JAVA, default_configs::PYTHON, language::PiranhaLanguage};
 
 fn run_test(
   code: &str, pattern: &str, expected_matches: usize, expected_vars: Vec<Vec<(&str, &str)>>,
@@ -162,5 +162,17 @@ fn test_match_anything() {
     1,
     vec![vec![("x", "public static void main(String args) {  }")]],
     JAVA,
+  );
+}
+
+#[test]
+fn test_match_function() {
+  // Test matching the given code against the template
+  run_test(
+    "def main():\n  x = 1\n  x = 3\n  print(x)",
+    "def main(): :[body]",
+    2,
+    vec![vec![("body", "x = 1\n  x = 3\n  print(x)")]],
+    PYTHON,
   );
 }

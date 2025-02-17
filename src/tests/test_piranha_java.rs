@@ -488,3 +488,48 @@ fn test_incorrect_codebase_path() {
     .build();
   _ = execute_piranha(&piranha_arguments);
 }
+
+/// This test is to check if Piranha is able to handle a syntactically incorrect tree.
+#[test]
+fn test_if_not_working() {
+  let rule = piranha_rule! {
+    name = "match_class",
+    query = "((if_statement condition : (condition (true)) consequence : ((statement) @consequence)) @if_statement)",
+    replace_node = "if_statement",
+    replace = "@consequence"
+  };
+
+  let piranha_arguments = PiranhaArgumentsBuilder::default()
+    .code_snippet(String::from("if (true) { return 0; }"))
+    .language(PiranhaLanguage::from(JAVA))
+    .rule_graph(RuleGraphBuilder::default().rules(vec![rule]).build())
+    .allow_dirty_ast(true)
+    .build();
+
+  let output_summaries = execute_piranha(&piranha_arguments);
+  // assert
+  assert_eq!(output_summaries.len(), 1);
+}
+
+/// This test is to check if Piranha is able to handle a syntactically incorrect tree.
+#[test]
+fn test_cs_enter() {
+  let rule = piranha_rule! {
+    name = "match_class",
+    query = "cs
+    if (true) { :[body] }",
+    replace_node = "*",
+    replace = "x = 1;"
+  };
+
+  let piranha_arguments = PiranhaArgumentsBuilder::default()
+    .code_snippet(String::from("if (true) { return 0; }"))
+    .language(PiranhaLanguage::from(JAVA))
+    .rule_graph(RuleGraphBuilder::default().rules(vec![rule]).build())
+    .allow_dirty_ast(true)
+    .build();
+
+  let output_summaries = execute_piranha(&piranha_arguments);
+  // assert
+  assert_eq!(output_summaries.len(), 1);
+}

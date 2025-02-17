@@ -53,8 +53,8 @@ static RNG: Lazy<Mutex<StdRng>> = Lazy::new(|| {
 });
 
 fn remove_trailing_indentation(text: &str, trailing_indent: &str) -> String {
-  println!("Text {}", text);
-  println!("Indent {}", trailing_indent);
+  // println!("Text {}", text);
+  // println!("Indent {}", trailing_indent);
   text
     .lines()
     .map(|line| {
@@ -101,6 +101,10 @@ pub(crate) struct SourceCodeUnit {
   // Piranha Arguments passed by the user
   #[get = "pub"]
   piranha_arguments: PiranhaArguments,
+
+  // Used to heuristically cancel piranha execution
+  #[get = "pub"]
+  propagate_count: u32,
 }
 
 struct RuleApplication {
@@ -123,6 +127,7 @@ impl SourceCodeUnit {
       rewrites: Vec::new(),
       matches: Vec::new(),
       piranha_arguments: piranha_arguments.clone(),
+      propagate_count: 0,
     };
     // Panic if allow dirty ast is false and the tree is syntactically incorrect
     if !piranha_arguments.allow_dirty_ast() && source_code_unit._number_of_errors() > 0 {
@@ -294,6 +299,11 @@ impl SourceCodeUnit {
     // Perform the parent edits, while queueing the Method and Class level edits.
     // let file_level_scope_names = [METHOD, CLASS];
     loop {
+      self.propagate_count += 1;
+      if self.propagate_count > 100 {
+        panic!("Too many rule applications. Likely infinite loop.")
+      }
+
       debug!("Current Rule: {current_rule}");
       // Get all the (next) rules that could be after applying the current rule (`rule`).
       debug!("Substitutions: {:?}", self.substitutions);
